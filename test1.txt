@@ -1,0 +1,110 @@
+// for this following pieces:
+
+++   -
++   ---
+++,  -
+
+and the following space:
+
+123
+4560
+789
+
+the following is the only arrangement:
+
+++-
++---
+++-
+
+SAT formula for this:
+
+    Condition 1: Need A in the grid
+        (A1 ^ A2 ^ A4 ^ A7 ^ A8) v (A2 ^ A3 ^ A5 ^ A8 ^ A9)
+      v (A1 ^ A2 ^ A5 ^ A7 ^ A8) v (A2 ^ A3 ^ A6 ^ A8 ^ A9)
+      v (A1 ^ A2 ^ A3 ^ A4 ^ A6) v (A4 ^ A5 ^ A6 ^ A7 ^ A9)
+      v (A1 ^ A3 ^ A4 ^ A5 ^ A6) v (A4 ^ A6 ^ A7 ^ A8 ^ A9)
+
+      Becomes
+
+        (~Wa1 v A1) ^ (~Wa1 v A2) ^ (~Wa1 v A4) ^ (~Wa1 v A7) ^ (~Wa1 v A8)
+      ^ (Wa1 v ~A1 v ~A2 v ~A4 v ~A7 v ~A8) # ^ Wa1
+      ^ (~Wa2 v A2) ^ (~Wa2 v A3) ^ (~Wa2 v A5) ^ (~Wa2 v A8) ^ (~Wa2 v A9)
+      ^ (Wa2 v ~A2 v ~A3 v ~A5 v ~A8 v ~A9) # ^ Wa2
+      ^ (~Wa3 v A1) ^ (~Wa3 v A2) ^ (~Wa3 v A5) ^ (~Wa3 v A7) ^ (~Wa3 v A8) 
+      ^ (Wa3 v ~A1 v ~A2 v ~A5 v ~A7 v ~A8) # ^ Wa3
+      ^ (~Wa4 v A2) ^ (~Wa4 v A3) ^ (~Wa4 v A6) ^ (~Wa4 v A8) ^ (~Wa4 v A9) 
+      ^ (Wa4 v ~A2 v ~A3 v ~A6 v ~A7 v ~A9) # ^ Wa4
+      ^ (~Wa5 v A1) ^ (~Wa5 v A2) ^ (~Wa5 v A3) ^ (~Wa5 v A4) ^ (~Wa5 v A6) 
+      ^ (Wa5 v ~A1 v ~A2 v ~A3 v ~A4 v ~A6) # ^ Wa5
+      ^ (~Wa6 v A4) ^ (~Wa6 v A5) ^ (~Wa6 v A6) ^ (~Wa6 v A7) ^ (~Wa6 v A9) 
+      ^ (Wa6 v ~A4 v ~A5 v ~A6 v ~A7 v ~A9) # ^ Wa6
+      ^ (~Wa7 v A1) ^ (~Wa7 v A3) ^ (~Wa7 v A4) ^ (~Wa7 v A5) ^ (~Wa7 v A6) 
+      ^ (Wa7 v ~A1 v ~A3 v ~A4 v ~A5 v ~A6) # ^ Wa7
+      ^ (~Wa8 v A4) ^ (~Wa8 v A6) ^ (~Wa8 v A7) ^ (~Wa8 v A8) ^ (~Wa8 v A9) 
+      ^ (Wa8 v ~A4 v ~A6 v ~A7 v ~A8 v ~A9) # ^ Wa8
+    
+      ^ (SA v ~Wa1) ^ (SA v ~Wa2) ^ (SA v ~Wa3) ^ (SA v ~Wa4) 
+      ^ (SA v ~Wa5) ^ (SA v ~Wa6) ^ (SA v ~Wa7) ^ (SA v ~Wa8) 
+      ^ (~SA v Wa1 v Wa2 v Wa3 v Wa4 v Wa5 v Wa6 v Wa7 v Wa8)
+
+      ^ SA
+
+    Condition 2: Need B in the grid
+        (B2 ^ B4 ^ B5 ^ B6 ^ B8) v (B3 ^ B5 ^ B6 ^ B0 ^ B9)
+
+      Becomes
+
+        (~Wb1 v B2) ^ (~Wb1 v B4) ^ (~Wb1 v B5) ^ (~Wb1 v B6) ^ (~Wb1 v B8) 
+      ^ (Wb1 v ~B2 v ~B4 v ~B5 v ~B6 v ~B8) # ^ Wb1
+      ^ (~Wb2 v B3) ^ (~Wb2 v B5) ^ (~Wb2 v B6) ^ (~Wb2 v B0) ^ (~Wb2 v B9) 
+      ^ (Wb2 v ~B3 v ~B5 v ~B6 v ~B0 v ~B9) # ^ Wb2
+
+      ^ (SB v ~Wb1) ^ (SB v ~Wb2) ^ (~SB v Wb1 v Wb2)
+
+      ^ SB
+
+    Condition 3: Every tile must hold A or B but not both
+        (A0 v B0) ^ (~A0 v ~B0) ^ (A1 v B1) ^ (~A1 v ~B1)
+      ^ (A2 v B2) ^ (~A2 v ~B2) ^ (A3 v B3) ^ (~A3 v ~B3)
+      ^ (A4 v B4) ^ (~A4 v ~B4) ^ (A5 v B5) ^ (~A5 v ~B5)
+      ^ (A6 v B6) ^ (~A6 v ~B6) ^ (A7 v B7) ^ (~A7 v ~B7)
+      ^ (A8 v B8) ^ (~A8 v ~B8) ^ (A9 v B9) ^ (~A9 v ~B9)
+
+
+    Variable map:
+    ~A0 -> 1
+     A1 -> 2
+     A2 -> 3
+    ~A3 -> 4
+     A4 -> 5
+    ~A5 -> 6
+    ~A6 -> 7
+     A7 -> 8
+     A8 -> 9
+    ~A9 -> 10
+     B0 -> 11
+    ~B1 -> 12
+    ~B2 -> 13
+     B3 -> 14
+    ~B4 -> 15
+     B5 -> 16
+     B6 -> 17
+    ~B7 -> 18
+    ~B8 -> 19
+     B9 -> 20
+
+     Wa1 -> 21
+    ~Wa2 -> 22
+    ~Wa3 -> 23
+    ~Wa4 -> 24
+    ~Wa5 -> 25
+    ~Wa6 -> 26
+    ~Wa7 -> 27
+    ~Wa8 -> 28
+
+    ~Wb1 -> 29
+     Wb2 -> 30
+
+     SA -> 31
+     SB -> 32
+
