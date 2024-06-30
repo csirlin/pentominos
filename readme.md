@@ -234,9 +234,9 @@ Assignment variables will be assigned IDs ```1...GN```. As a reminder, assignmen
 
 Exclusivity variables will be assigned IDs ```GN+1...2GN```. As a reminder, exclusivity variables look like EbS3, which corresponds to pentomino B, space 3. An arbitrary exclusivity variable EpSs (Exclusively pentomino, Space space) should be given id ```GN + Gp + s + 1```.
 
-Position variables will be assigned IDs ```2GN+1...2GN+T```. As a reminder, position variables look like Pb2, which corresponds to pentomino b, position 2. An arbitrary position variable Pbi (Position pentomino pos_id) should be given id ```2GN + O[p] + i```. ```O``` is an array which holds offsets for each pentomino's position. Let's say there are three pentominos (A, B, and C). Pentomino A has 5 valid positions, pentomino B has 3, and pentomino C has 2, for a total of 10. Pa0 should have no offset, and Pa1...Pa4 should get the next 4 ids. Pb0 should have an offset of P_A = 5 so that it picks up the next id. Similarly, Pc0 should have an offset of P_A + P_B = 8 so that it picks up the next id after Pb0...Pb2.
+Position variables will be assigned IDs ```2GN+1...2GN+T```. As a reminder, position variables look like Pb2, which corresponds to pentomino b, position 2. An arbitrary position variable Pbi (Position pentomino pos_id) should be given id ```2GN + O[p] + i + 1```. ```O``` is an array which holds offsets for each pentomino's position. Let's say there are three pentominos (A, B, and C). Pentomino A has 5 valid positions, pentomino B has 3, and pentomino C has 2, for a total of 10. Pa0 should have no offset, and Pa1...Pa4 should get the next 4 ids. Pb0 should have an offset of P_A = 5 so that it picks up the next id. Similarly, Pc0 should have an offset of P_A + P_B = 8 so that it picks up the next id after Pb0...Pb2.
 
-Position set variables will be assigned IDs ```2GN+T+1...2GN+T+N```. As a reminder, position set variables look like Sc, which corresponds to pentomino C. An arbitrary position set variable Si (position set pentomino i) should have id ```2GN+T+i+1 if i is 0-indexed.
+Position set variables will be assigned IDs ```2GN+T+1...2GN+T+N```. As a reminder, position set variables look like Sc, which corresponds to pentomino C. An arbitrary position set variable Si (position set pentomino i) should have id ```2GN+T+i+1``` if i is 0-indexed.
 
 
 
