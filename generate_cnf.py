@@ -1,6 +1,6 @@
 import glob
 import os
-# class for a Pentomino object holds the relative positions of every cell 
+# class for a Pentomino object holds the relative positions of every space 
 # occupied by a pentomino and provides information about them to the caller
 class Pentomino:
 
@@ -90,109 +90,205 @@ class Grid:
 
 # map local id's to global id's for cnf format
 class Mapper:
-    def __init__(self, grid_size):
-        self.next_available = 0
-        self.grid_size = grid_size
-        self.starting_clause_ids = []
-        self.starting_total_id = -1
+    def __init__(self, grid_size, pentomino_size=5):
+        self.G = grid_size
+        self.S = pentomino_size # 5 by default, don't think it will change
+        self.O = [0] # position variable offsets
+        self.N = 1e9 # obvious dummy value for number of pentominos
 
     def map_variables(self, list_of_pos_lists):
+       
+        # number of pentominos
+        self.N = len(list_of_pos_lists) 
+
+        # position offset for each pentomino
+        for pentomino_pos_list in list_of_pos_lists:
+            self.O.append(self.O[-1] + len(pentomino_pos_list))
         
-        # set next available to the first id after the placement ids
-        self.next_available = len(list_of_pos_lists) * self.grid_size + 1
+        # total number of positions
+        self.T = self.O[-1]
+        
+        # # set next available to the first id after the placement ids
+        # self.next_available = len(list_of_pos_lists) * self.grid_size + 1
 
-        # for each pentomino:
-        for (i, pos_list) in enumerate(list_of_pos_lists):
+        # # for each pentomino:
+        # for (i, pos_list) in enumerate(list_of_pos_lists):
 
-            # set the starting clause id for that pentomino
-            self.starting_clause_ids.append(self.next_available)
+        #     # set the starting clause id for that pentomino
+        #     self.starting_clause_ids.append(self.next_available)
 
-            # # for each possible pentomino position in the list of positions
-            # # for the given pentomino:
-            # for (j, pos_set) in enumerate(pos_list):
+        #     # # for each possible pentomino position in the list of positions
+        #     # # for the given pentomino:
+        #     # for (j, pos_set) in enumerate(pos_list):
 
-            #     # global clause_variable is the next available (current offset) 
-            #     # plus the index of the current pos in the list of positions
-            #     clause_var = self.next_available + j
-            #     for (k, )
+        #     #     # global clause_variable is the next available (current offset) 
+        #     #     # plus the index of the current pos in the list of positions
+        #     #     clause_var = self.next_available + j
+        #     #     for (k, )
 
-            #     # gonna need one more loop
-            #     pos_var = self.get_num_placement(pos, i)
-            #     s += f"-{clause_var} {pos_var}\n"
-            #     s += f"{self.next_available + j}"
-            self.next_available += len(pos_list)
-        self.starting_total_id = self.next_available
+        #     #     # gonna need one more loop
+        #     #     pos_var = self.get_num_placement(pos, i)
+        #     #     s += f"-{clause_var} {pos_var}\n"
+        #     #     s += f"{self.next_available + j}"
+        #     self.next_available += len(pos_list)
+        # self.starting_total_id = self.next_available
 
-    def get_num_placement(self, grid_index, pentomino_index):
-        return pentomino_index * self.grid_size + grid_index + 1
+    # get the ID of an assignment variable for a given pentomino and space
+    def get_num_assignment(self, pentomino_index, space_index):
+        return self.G * pentomino_index + space_index + 1
+    
+    # get the ID of an exclusivity variable for a given pentomino and space
+    def get_num_exclusivity(self, pentomino_index, space_index):
+        return self.G * (self.N + pentomino_index) + space_index + 1
+    
+    def get_num_position(self, pentomino_index, position_index):
+        return 2 * self.G * self.N + self.O[pentomino_index] + position_index + 1
 
-    def get_num_clause(self, clause_index, pentomino_index):
-        return self.starting_clause_ids[pentomino_index] + clause_index
+    def get_num_pos_set(self, pentomino_index):
+        return 2 * self.G * self.N + self.T + pentomino_index + 1
 
-    def get_num_total(self, pentomino_index):
-        return self.starting_total_id + pentomino_index
+    def build_clause(self, id_list):
+        return ' '.join([str(x) for x in id_list]) + ' 0\n'
 
     def generate_printout(self, list_of_pos_lists):
+        # DIMAC CNF header: "p cnf <num of vars> <num of clauses>"
+        s = f"p cnf {self.N * (2 * self.G + 1) + self.T} {self.T * (self.S + 2) + 2 * self.N + self.G * (self.N**2 + self.N + 1)}\n"
         
-        s = "p cnf <num of vars> <num of clauses>\n"
+        # permutation definition
+        for pentomino in range(self.N):
 
-        # all pentominos need a valid assignment
-        # for each pentomino, look at it's list of position sets
-        for (i, pos_sets) in enumerate(list_of_pos_lists):
-            
-            # for each list of position sets, look at each position set
-            print("POS_SETS = ", pos_sets)
-            for (j, pos_set) in enumerate(pos_sets):
+            # ACP block
+            for pos_id in range(len(list_of_pos_lists[pentomino])):
                 
-                # get the clause var corresponding to the current pentomino
-                # and position set id
-                clause_var = self.get_num_clause(j, i)
+                # PIA expression
+                aip_clause_ids = []
+                position = self.get_num_position(pentomino, pos_id)
 
-                # for each position in the position set
-                for pos in pos_set:
-                    # get the placement var corresponding to the current
-                    # pentomino and local position id
-                    pos_var = self.get_num_placement(pos, i)
+                for tile in list_of_pos_lists[pentomino][pos_id]:
+                    
+                    # PIA component (~Pa1 v A1)
+                    assignment = self.get_num_assignment(pentomino, tile)
+                    s += self.build_clause([-position, assignment])
 
-                    # add the position term to the string
-                    s += f"-{clause_var} {pos_var} 0\n"
+                    # add assignment literals to aip clause list for later
+                    aip_clause_ids.append(-assignment)
 
-                # add the clause term to the string
-                s += f"{clause_var} 0\n"
+                # AIP clause (Pa1 v ~A1 v ~A2 v ~A4 v ~A7 v ~A8)
+                s += self.build_clause([position] + aip_clause_ids)
 
-        for (i, pos_sets) in enumerate(list_of_pos_lists):
-            pentomino_var = self.get_num_total(i)
-            for (j, pos_set) in enumerate(pos_sets):
-                clause_var = self.get_num_clause(j, i)
-                s += f"{pentomino_var} -{clause_var} 0\n"
+            # PIS expression
+            sip_clause_ids = []
+            pos_set = self.get_num_pos_set(pentomino)
 
-        for (i, pos_sets) in enumerate(list_of_pos_lists):
-            pentomino_var = self.get_num_total(i)
-            s += f"{pentomino_var} 0\n"
+            for pos_id in range(len(list_of_pos_lists[pentomino])):   
 
-        # need condition for no two pentominos in the same position
-        for gs in range(self.grid_size):
-            for pent_index in range(len(list_of_pos_lists)):
-                for pent_index_2 in range(len(list_of_pos_lists)):
-                    if pent_index != pent_index_2:
-                        s += 
+                # PIS component (Sa v ~Pa1)
+                position = self.get_num_position(pentomino, pos_id)
+                s += self.build_clause([pos_set, -position])
+
+                # add position literals to sip clause list for later
+                sip_clause_ids.append(position)
+
+            # SIP clause (~Sa v Pa1 v Pa2 v Pa3 v Pa4 v Pa5 v Pa6 v Pa7 v Pa8)
+            s += self.build_clause([-pos_set] + sip_clause_ids)
+
+            # set requirement clause (Sa)
+            s += self.build_clause([pos_set])
+        
+        # grid definition
+        for space in range(self.G):
+
+            # exclusivity block
+            occupancy_clause_ids = []
+
+            for exclusivity_pentomino in range(self.N):
+
+                # EIA expression
+                aie_clause_ids = []
+                exclusivity = self.get_num_exclusivity(exclusivity_pentomino, space)
+
+                for assignment_pentomino in range(self.N):
+                        
+                    # EIA component (~EaS1 v A1) or (~EaS1 v ~B1)
+                    assignment = -self.get_num_assignment(assignment_pentomino, space)
+                    if assignment_pentomino == exclusivity_pentomino:
+                        # remember that the assignment variable is negated if it's space
+                        # NOT the same as the exclusivity variable's space, and vice versa
+                        assignment = -assignment 
+                    s += self.build_clause([-exclusivity, assignment])
+
+                    # add assignment literals to aie clause list for later
+                    aie_clause_ids.append(-assignment)
+
+                # AIE clause (EaS1 v ~A1 v B1)
+                s += self.build_clause([exclusivity] + aie_clause_ids)
+
+                # add exclusivity literals to occupancy clause list for later
+                occupancy_clause_ids.append(exclusivity)
+
+            # occupancy clause (EaS1 v EbS1)
+            s += self.build_clause(occupancy_clause_ids)
+
+        # # all pentominos need a valid assignment
+        # # for each pentomino, look at it's list of position sets
+        # for (i, pos_sets) in enumerate(list_of_pos_lists):
+            
+        #     # for each list of position sets, look at each position set
+        #     print("POS_SETS = ", pos_sets)
+        #     for (j, pos_set) in enumerate(pos_sets):
+                
+        #         # get the clause var corresponding to the current pentomino
+        #         # and position set id
+        #         clause_var = self.get_num_clause(j, i)
+
+        #         # for each position in the position set
+        #         for pos in pos_set:
+        #             # get the placement var corresponding to the current
+        #             # pentomino and local position id
+        #             pos_var = self.get_num_placement(pos, i)
+
+        #             # add the position term to the string
+        #             s += f"-{clause_var} {pos_var} 0\n"
+
+        #         # add the clause term to the string
+        #         s += f"{clause_var} 0\n"
+
+        # for (i, pos_sets) in enumerate(list_of_pos_lists):
+        #     pentomino_var = self.get_num_total(i)
+        #     for (j, pos_set) in enumerate(pos_sets):
+        #         clause_var = self.get_num_clause(j, i)
+        #         s += f"{pentomino_var} -{clause_var} 0\n"
+
+        # for (i, pos_sets) in enumerate(list_of_pos_lists):
+        #     pentomino_var = self.get_num_total(i)
+        #     s += f"{pentomino_var} 0\n"
+
+        # # need condition for no two pentominos in the same position
+        # for grid_index in range(self.grid_size):
+        #     for pent_index in range(len(list_of_pos_lists)):
+        #         for pent_index_2 in range(len(list_of_pos_lists)):
+        #             if pent_index != pent_index_2:
+        #                 s += 
 
         return s
     
 
 
 pentomino_pathnames = glob.glob("pentominos/*")
-pentominos = [Pentomino(f) for f in pentomino_pathnames]
-grid = Grid("grids/grid1.txt")
-print(grid.get_valid_position_lists(pentominos[0]))
+print(pentomino_pathnames)
+pentominos = [Pentomino(f) for f in pentomino_pathnames][0:18]
+# print(pentominos)
+grid = Grid("grids/grid5x18.txt")
+# print(grid.get_valid_position_lists(pentominos[0]))
 
 m = Mapper(grid.size)
 list_of_pos_lists = [grid.get_valid_position_lists(pentominos[i]) for i in range(len(pentominos))]
-print(list_of_pos_lists)
+print(list_of_pos_lists[4])
+
 m.map_variables(list_of_pos_lists)
 s = m.generate_printout(list_of_pos_lists)
 
-output_filename = 'output.cnf'
+output_filename = 'output5x18.cnf'
 output = open(output_filename, 'w')
 output.write(s)
 # output.write(f"c {output_filename}\np cnf {variables} {clauses}\n")
