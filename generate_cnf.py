@@ -1,5 +1,6 @@
 import glob
 import os
+import pickle
 # class for a Pentomino object holds the relative positions of every space 
 # occupied by a pentomino and provides information about them to the caller
 class Pentomino:
@@ -149,6 +150,11 @@ class Mapper:
 
     def build_clause(self, id_list):
         return ' '.join([str(x) for x in id_list]) + ' 0\n'
+    
+    def get_assignment_from_num(self, num):
+        pos = (num - 1) % self.G
+        pent = (num - 1) // self.G
+        return (pent, pos)
 
     def generate_printout(self, list_of_pos_lists):
         # DIMAC CNF header: "p cnf <num of vars> <num of clauses>"
@@ -273,26 +279,44 @@ class Mapper:
         return s
     
 
+if __name__ == "__main__":
+    pentomino_pathnames = glob.glob("pentominos/*")
+    print(pentomino_pathnames)
+    pentominos = [Pentomino(f) for f in pentomino_pathnames][0:17]
+    # print(pentominos)
+    grid = Grid("grids/grid5x17.txt")
+    # print(grid.get_valid_position_lists(pentominos[0]))
 
-pentomino_pathnames = glob.glob("pentominos/*")
-print(pentomino_pathnames)
-pentominos = [Pentomino(f) for f in pentomino_pathnames][0:18]
-# print(pentominos)
-grid = Grid("grids/grid5x18.txt")
-# print(grid.get_valid_position_lists(pentominos[0]))
+    m = Mapper(grid.size)
+    list_of_pos_lists = [grid.get_valid_position_lists(pentominos[i]) for i in range(len(pentominos))]
+    combos = 1
+    for (i, pos_list) in enumerate(list_of_pos_lists):
+        print(i, len(pos_list))
+        combos *= len(pos_list)
+    print(combos)
 
-m = Mapper(grid.size)
-list_of_pos_lists = [grid.get_valid_position_lists(pentominos[i]) for i in range(len(pentominos))]
-print(list_of_pos_lists[4])
+    m.map_variables(list_of_pos_lists)
+    s = m.generate_printout(list_of_pos_lists)
 
-m.map_variables(list_of_pos_lists)
-s = m.generate_printout(list_of_pos_lists)
-
-output_filename = 'output5x18.cnf'
-output = open(output_filename, 'w')
-output.write(s)
-# output.write(f"c {output_filename}\np cnf {variables} {clauses}\n")
+    # output_filename = 'output1f.cnf'
+    # output = open(output_filename, 'w')
+    # output.write(s)
+    # pickle.dump(m, open('mapper5x9f.pkl', 'wb'))
+    # output.write(f"c {output_filename}\np cnf {variables} {clauses}\n")
 
     
+# grid1
+# 4 duodecillion :(
+# 4 699 325 490 484 678 553 289 281 643 492 523 015 680
 
+# grid5x15 (3211s)
+# 91 nonillion
+# 91 228 306 732 639 680 489 536 524 124 160
 
+# grid5x16 (7603s)
+# 56 decillion
+# 56 975 008 705 871 680 574 389 141 584 740 352
+
+# grid5x17 (???)
+# 31 undecillion
+# 31 326 899 301 583 863 803 055 754 444 800 000 000
