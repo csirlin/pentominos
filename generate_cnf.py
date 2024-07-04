@@ -282,26 +282,30 @@ class Mapper:
 if __name__ == "__main__":
     pentomino_pathnames = glob.glob("pentominos/*")
     print(pentomino_pathnames)
-    pentominos = [Pentomino(f) for f in pentomino_pathnames][0:17]
+    pentominos = [Pentomino(f) for f in pentomino_pathnames][0:18]
     # print(pentominos)
-    grid = Grid("grids/grid5x17.txt")
+    suffix = "1"
+    grid = Grid(f"grids/grid{suffix}.txt")
     # print(grid.get_valid_position_lists(pentominos[0]))
 
     m = Mapper(grid.size)
     list_of_pos_lists = [grid.get_valid_position_lists(pentominos[i]) for i in range(len(pentominos))]
     combos = 1
+    sum = 0
     for (i, pos_list) in enumerate(list_of_pos_lists):
         print(i, len(pos_list))
         combos *= len(pos_list)
+        sum += len(pos_list)
     print(combos)
+    print(sum)
 
     m.map_variables(list_of_pos_lists)
     s = m.generate_printout(list_of_pos_lists)
 
-    # output_filename = 'output1f.cnf'
-    # output = open(output_filename, 'w')
-    # output.write(s)
-    # pickle.dump(m, open('mapper5x9f.pkl', 'wb'))
+    output_filename = f'output{suffix}.cnf'
+    output = open(output_filename, 'w')
+    output.write(s)
+    pickle.dump(m, open(f'mapper{suffix}.pkl', 'wb'))
     # output.write(f"c {output_filename}\np cnf {variables} {clauses}\n")
 
     
