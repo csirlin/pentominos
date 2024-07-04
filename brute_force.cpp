@@ -44,17 +44,26 @@ public:
     }
 };
 
-// read in a grid line-by-line until there's no input left
-vector<vector<int>> read_grid(string filename) {
+class Grid {
+private:
     vector<vector<int>> grid;
-    ifstream file(filename);
-    string line;
-    while (getline(file, line)) {
-        int space = line.find(' ');
-        grid.push_back({stoi(line.substr(0, space)), stoi(line.substr(space + 1))});
+public:
+    Grid(vector<vector<int>> grid) {
+        this->grid = grid;
     }
-    return grid;
-}
+    // read in a grid line-by-line until there's no input left
+    Grid(string filename) {
+        ifstream file(filename);
+        string line;
+        while (getline(file, line)) {
+            int space = line.find(' ');
+            this->grid.push_back({stoi(line.substr(0, space)), stoi(line.substr(space + 1))});
+        }
+    }
+    vector<vector<int>> get_grid() {
+        return grid;
+    }
+};
 
 // read in all the pentominoes in a folder
 vector<Pentomino> read_pentominoes(string filename) {
@@ -80,14 +89,14 @@ vector<Pentomino> read_pentominoes(string filename) {
 
 int main() {
     int size = 5;
-    vector<vector<int>> grid = read_grid("grids/grid1.txt");
-    if (grid.size() % size != 0) {
-        cout << "Invalid grid size: pentominoes of size " << size << " don't evenly fill a grid of size " << grid.size() << endl;
+    Grid grid("grids/grid1.txt");
+    if (grid.get_grid().size() % size != 0) {
+        cout << "Invalid grid size: pentominoes of size " << size << " don't evenly fill a grid of size " << grid.get_grid().size() << endl;
         return 1;
     }
-    int num_pentominoes = grid.size() / size;
-    for (int i = 0; i < grid.size(); i++) {
-        cout << grid[i][0] << " " << grid[i][1] << endl;
+    int num_pentominoes = grid.get_grid().size() / size;
+    for (int i = 0; i < grid.get_grid().size(); i++) {
+        cout << grid.get_grid()[i][0] << " " << grid.get_grid()[i][1] << endl;
     }
 
     vector<Pentomino> pentominoes = read_pentominoes("pentominos");
