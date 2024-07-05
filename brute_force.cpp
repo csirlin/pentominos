@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <unordered_map>
+#include <utility>
 using namespace std;
 
 class Pentomino {
@@ -47,17 +49,25 @@ public:
 class Grid {
 private:
     vector<vector<int>> grid;
+    unordered_map<int, pair<int, int>> index_to_position;
+    unordered_map<pair<int, int>, int> position_to_index;
 public:
-    Grid(vector<vector<int>> grid) {
-        this->grid = grid;
-    }
+    // Grid(vector<vector<int>> grid) {
+    //     this->grid = grid;
+    // }
     // read in a grid line-by-line until there's no input left
     Grid(string filename) {
         ifstream file(filename);
         string line;
+        int i = 1;
         while (getline(file, line)) {
             int space = line.find(' ');
-            this->grid.push_back({stoi(line.substr(0, space)), stoi(line.substr(space + 1))});
+            int x = stoi(line.substr(0, space));
+            int y = stoi(line.substr(space + 1));
+            this->grid.push_back({x, y});
+            this->index_to_position.insert({i, {x, y}});
+            this->position_to_index.insert({{x, y}, i});
+            i++;
         }
     }
     vector<vector<int>> get_grid() {
