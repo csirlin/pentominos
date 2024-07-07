@@ -167,6 +167,36 @@ vector<Pentomino> read_pentominoes(string filename) {
     return pentominoes;
 }
 
+// map a list of positions to an efficient representation for a single pentomino
+// the efficient representation is a list of long longs, where each long long represents 64 grid positions
+// that way in a couple numbers you can check if two positions overlap by checking if the bitwise AND of the two numbers is 0
+vector<vector<int>> map_1p_positions_to_efficient(vector<vector<int>> positions, int grid_size) {
+    // we need ceil(grid_size / 64) long longs to represent the grid
+    int required_long_longs = (grid_size + 63) / 64; 
+    vector<vector<int>> efficient_positions;
+
+    // for each position, make a long long for each 64 grid positions. 
+    // set the bit at the index of the grid position to 1
+    for (int i = 0; i < positions.size(); i++) { 
+        vector<int> efficient_position(required_long_longs, 0);
+        for (int j = 0; j < positions[i].size(); j++) {
+            int index = positions[i][j];
+            efficient_position[index / 64] |= 1 << (index % 64);
+        }
+        efficient_positions.push_back(efficient_position);
+    }
+    return efficient_positions;
+}
+
+// map a list of positions to an efficient representation for multiple pentominoes
+// just call the 1p version for each pentomino and append and return all the results
+vector<vector<vector<int>>> map_allp_positions_to_efficient(vector<vector<vector<int>>> positions, int grid_size) {
+    vector<vector<vector<int>>> efficient_positions;
+    for (int i = 0; i < positions.size(); i++) {
+        efficient_positions.push_back(map_1p_positions_to_efficient(positions[i], grid_size));
+    }
+    return efficient_positions;
+}
 
 int main() {
     int size = 5;
@@ -208,6 +238,8 @@ int main() {
             cout << endl;
         }
     }
+
+
 
     return 0;
 }
