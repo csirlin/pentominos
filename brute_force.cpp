@@ -7,6 +7,7 @@
 #include <utility>
 using namespace std;
 
+// These structs are needed to use std::pair as a key in an unordered_map
 // Define a hash function for std::pair
 struct pair_hash {
     template <class T1, class T2>
@@ -62,43 +63,35 @@ public:
         str += "] x " + std::to_string(rotations) + "r";
         return str;
     }
-    // return a list of all possible rotations of the pentomino
+    // return a list of all possible rotations of a pentomino centered at a given position
     vector<vector<vector<int>>> get_positions(vector<int> center) {
         vector<vector<vector<int>>> positions;
         int cx = center[0];
         int cy = center[1];
-        for (int i = 0; i < rotations; i++) {
 
+        // go through all of a pentomino's rotations
+        for (int i = 0; i < rotations; i++) {
+            // map the rotated shape to the grid position so that pentomino (0, 0) is at the given center
             vector<vector<int>> position;
             for (int j = 0; j < shape.size(); j++) {
                 int dx = shape[j][0];
                 int dy = shape[j][1];
                 // cout << "dx = " << dx << ", dy = " << dy << endl;
-                if (i == 0) {
+                if (i == 0) { // no rotation
                     position.push_back({cx+dx, cy+dy});
                 }
-                else if (i == 1) {
+                else if (i == 1) { // 90 degree rotation
                     position.push_back({cx-dy, cy+dx});
                 }
-                else if (i == 2) {
+                else if (i == 2) { // 180 degree rotation
                     position.push_back({cx-dx, cy-dy});
                 }
-                else { //i == 3
+                else { //i == 3: 270 degree rotation
                     position.push_back({cx+dy, cy-dx});
                 }
             }
             positions.push_back(position);
-            
         }
-        // cout << "positions.size() = " << positions.size() << endl;
-        // for (int i = 0; i < positions.size(); i++) {
-        //     cout << "position " << i << endl;
-        //     for (int j = 0; j < positions[i].size(); j++) {
-        //         cout << "(" << positions[i][j][0] << ", " << positions[i][j][1] << ") ";
-        //     }
-        //     cout << endl;
-        // }
-
         return positions;
     }
 };
@@ -109,10 +102,7 @@ private:
     unordered_map<int, pair<int, int>> index_to_position;
     unordered_map<pair<int, int>, int, pair_hash, pair_equal> position_to_index;
 public:
-    // Grid(vector<vector<int>> grid) {
-    //     this->grid = grid;
-    // }
-    // read in a grid line-by-line until there's no input left
+    // read in a grid line-by-line from a properly formatted file until there's no input left
     Grid(string filename) {
         ifstream file(filename);
         string line;
@@ -127,6 +117,7 @@ public:
             i++;
         }
     }
+
     vector<vector<int>> get_grid() {
         return grid;
     }
@@ -140,13 +131,18 @@ public:
         }
         return true;
     }
-
+    
+    // get the valid positions of a supplied pentomino in the grid
     // iterate through the grid and try placing the center of the pentomino at each point
     // if the pentomino fits, add it to the position list, using the mappings to indices.
     vector<vector<int>> get_valid_positions(Pentomino pentomino) {
         vector<vector<int>> valid_positions;
         for (int i = 0; i < grid.size(); i++) {
+
+            // get all the possible positions of the pentomino centered at each grid position
             vector<vector<vector<int>>> positions = pentomino.get_positions(grid[i]);
+
+            // go through each position. if it's valid, then map it to indices and add it to the list of valid positions
             for (int j = 0; j < positions.size(); j++) {
                 if (is_valid(positions[j])) {
                     vector<int> mapped_position;
@@ -171,17 +167,6 @@ vector<Pentomino> read_pentominoes(string filename) {
     return pentominoes;
 }
 
-// #include <string>
-// #include <iostream>
-// #include <filesystem>
-// namespace fs = std::filesystem;
-
-// int main()
-// {
-//     std::string path = "/path/to/directory";
-//     for (const auto & entry : fs::directory_iterator(path))
-//         std::cout << entry.path() << std::endl;
-// }
 
 int main() {
     int size = 5;
