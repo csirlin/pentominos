@@ -158,27 +158,31 @@ public:
 };
 
 // read in all the pentominoes in a folder
-vector<Pentomino> read_pentominoes(string filename) {
+vector<Pentomino> read_pentominoes(string filename, int num_pentominoes) {
     vector<Pentomino> pentominoes;
     string path = "./pentominos";
     for (/*const*/ auto & entry : filesystem::directory_iterator(path))
         pentominoes.push_back(Pentomino(entry.path()));
 
-    return pentominoes;
+    vector<Pentomino> trimmed;
+    for (int i = 0; i < num_pentominoes; i++) {
+        trimmed.push_back(pentominoes[i]);
+    }
+    return trimmed;
 }
 
 // map a list of positions to an efficient representation for a single pentomino
 // the efficient representation is a list of long longs, where each long long represents 64 grid positions
 // that way in a couple numbers you can check if two positions overlap by checking if the bitwise AND of the two numbers is 0
-vector<vector<int>> map_1p_positions_to_efficient(vector<vector<int>> positions, int grid_size) {
+vector<vector<long long>> map_1p_positions_to_efficient(vector<vector<int>> positions, int grid_size) {
     // we need ceil(grid_size / 64) long longs to represent the grid
     int required_long_longs = (grid_size + 63) / 64; 
-    vector<vector<int>> efficient_positions;
+    vector<vector<long long>> efficient_positions;
 
     // for each position, make a long long for each 64 grid positions. 
     // set the bit at the index of the grid position to 1
     for (int i = 0; i < positions.size(); i++) { 
-        vector<int> efficient_position(required_long_longs, 0);
+        vector<long long> efficient_position(required_long_longs, 0);
         for (int j = 0; j < positions[i].size(); j++) {
             int index = positions[i][j];
             efficient_position[index / 64] |= 1 << (index % 64);
@@ -190,17 +194,63 @@ vector<vector<int>> map_1p_positions_to_efficient(vector<vector<int>> positions,
 
 // map a list of positions to an efficient representation for multiple pentominoes
 // just call the 1p version for each pentomino and append and return all the results
-vector<vector<vector<int>>> map_allp_positions_to_efficient(vector<vector<vector<int>>> positions, int grid_size) {
-    vector<vector<vector<int>>> efficient_positions;
+vector<vector<vector<long long>>> map_allp_positions_to_efficient(vector<vector<vector<int>>> positions, int grid_size) {
+    vector<vector<vector<long long>>> efficient_positions;
     for (int i = 0; i < positions.size(); i++) {
         efficient_positions.push_back(map_1p_positions_to_efficient(positions[i], grid_size));
     }
     return efficient_positions;
 }
 
+// check if two efficient representations of pentomino positions overlap
+// if a single pair of long longs AND together to 1, then they have a position in common, so return true
+// if they all AND together to 0, then they have no positions in common, so return false
+bool overlap(vector<long long>& a, vector<long long>& b) {
+    if (a.size() != b.size()) {
+        cout << "Error: trying to compare two efficient positions of different sizes" << endl;
+        return false;
+    }
+    for (int i = 0; i < a.size(); i++) {
+        if (a[i] & b[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void assign(vector<long long>& existing, vector<long long>& next) {
+    for (int i = 0; i < existing.size(); i++) {
+        existing[i] |= next[i];
+    }
+}
+
+void unassign(vector<long long>& existing, vector<long long>& next) {
+    for (int i = 0; i < existing.size(); i++) {
+        existing[i] &= ~next[i];
+    }
+}
+
+string vector_to_string(vector<long long>& v) {
+    string str = "[";
+    for (int i = 0; i < v.size(); i++) {
+        str += std::to_string(v[i]) + ", ";
+    }
+    str = str.substr(0, str.size() - 2);
+    str += "]";
+    return str;
+}
+
+string format_positions(vector<int>& indices, vector<vector<vector<long long>>>& all_valid_positions) {
+    string str = "";
+    for (int i = 0; i < indices.size(); i++) {
+        str += vector_to_string(all_valid_positions[i][indices[i]]) + "\n";
+    }
+    return str;
+}
+
 int main() {
     int size = 5;
-    Grid grid("grids/grid1.txt");
+    Grid grid("grids/grid5x10.txt");
     if (grid.get_grid().size() % size != 0) {
         cout << "Invalid grid size: pentominoes of size " << size << " don't evenly fill a grid of size " << grid.get_grid().size() << endl;
         return 1;
@@ -210,7 +260,7 @@ int main() {
         cout << grid.get_grid()[i][0] << " " << grid.get_grid()[i][1] << endl;
     }
 
-    vector<Pentomino> pentominoes = read_pentominoes("pentominos");
+    vector<Pentomino> pentominoes = read_pentominoes("pentominos", num_pentominoes);
     for (int i = 0; i < pentominoes.size(); i++) {
         cout << pentominoes[i].to_string() << endl;
     }
@@ -222,21 +272,70 @@ int main() {
         // cout << "Pentomino " << i << " has " << valid_positions.size() << " valid positions" << endl;
     }
 
-    // print out pentomino positions
-    for (int i = 0; i < all_valid_positions.size(); i++) {
+    // // print out pentomino positions
+    // for (int i = 0; i < all_valid_positions.size(); i++) {
 
-        // for each pentomino
-        cout << "Pentomino " << i << endl;
-        cout << all_valid_positions[i].size() << " valid positions" << endl;
-        for (int j = 0; j < all_valid_positions[i].size(); j++) {
+    //     // for each pentomino
+    //     cout << "Pentomino " << i << endl;
+    //     cout << all_valid_positions[i].size() << " valid positions" << endl;
+    //     for (int j = 0; j < all_valid_positions[i].size(); j++) {
 
-            // for each position
-            cout << "  ";
-            for (int k = 0; k < all_valid_positions[i][j].size(); k++) {
-                cout << all_valid_positions[i][j][k] << " ";
+    //         // for each position
+    //         cout << "  ";
+    //         for (int k = 0; k < all_valid_positions[i][j].size(); k++) {
+    //             cout << all_valid_positions[i][j][k] << " ";
+    //         }
+    //         cout << endl;
+    //     }
+    // }
+
+    // map all the positions to efficient representations
+    vector<vector<vector<long long>>> all_efficient_positions = map_allp_positions_to_efficient(all_valid_positions, grid.get_grid().size());
+
+    // find an efficient solution:
+    // for each pentomino, try each position
+    int current = 0;
+    int i = 0;
+    vector<int> position_counts(num_pentominoes);
+    for (int i = 0; i < position_counts.size(); i++) {
+        position_counts[i] = all_efficient_positions[i].size();
+    }
+    vector<int> current_indices(num_pentominoes, 0);
+    vector<long long> current_assignments((grid.get_grid().size() + 63) / 64, 0);
+
+    while (true) {
+        if (current_indices[current] == position_counts[current]) {
+            current_indices[current] = 0;
+            current--;
+            if (current == -1) {
+                cout << "Done" << endl;
+                return 0;
+            }
+            unassign(current_assignments, all_efficient_positions[current][current_indices[current]]);
+            current_indices[current]++;
+            continue;
+        }
+        vector<long long> pos = all_efficient_positions[current][current_indices[current]];
+        // if there's an overlap, try the next position
+        if (overlap(current_assignments, pos)) {
+            current_indices[current]++;
+        }
+        else {
+            assign(current_assignments, pos);
+            current++;
+            if (current == num_pentominoes) {
+                cout << "Solution found! Positions are:\n" << format_positions(current_indices, all_efficient_positions) << endl;
+                return 0;
+            }
+        }
+        if (i % 100000 == 0) {
+            cout << i << ": current = " << current << ", current_indices = ";
+            for (int j = 0; j < current_indices.size(); j++) {
+                cout << current_indices[j] << " ";
             }
             cout << endl;
         }
+        i++;
     }
 
 
