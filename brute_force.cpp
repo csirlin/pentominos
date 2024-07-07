@@ -7,6 +7,24 @@
 #include <utility>
 using namespace std;
 
+// Define a hash function for std::pair
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator () (const std::pair<T1, T2> &p) const {
+        auto hash1 = std::hash<T1>{}(p.first);
+        auto hash2 = std::hash<T2>{}(p.second);
+        return hash1 ^ hash2; // Combine the hash values
+    }
+};
+
+// Define an equality function for std::pair
+struct pair_equal {
+    template <class T1, class T2>
+    bool operator () (const std::pair<T1, T2> &p1, const std::pair<T1, T2> &p2) const {
+        return p1.first == p2.first && p1.second == p2.second;
+    }
+};
+
 class Pentomino {
 private:
     vector<vector<int>> shape;
@@ -31,7 +49,7 @@ public:
     vector<vector<int>> get_shape() {
         return shape;
     }
-    int get_rotations() {
+    int get_num_rotations() {
         return rotations;
     }
     // return a string representation of the pentomino which reports a base position and the number of rotations
@@ -44,13 +62,52 @@ public:
         str += "] x " + std::to_string(rotations) + "r";
         return str;
     }
+    // return a list of all possible rotations of the pentomino
+    vector<vector<vector<int>>> get_positions(vector<int> center) {
+        vector<vector<vector<int>>> positions;
+        int cx = center[0];
+        int cy = center[1];
+        for (int i = 0; i < rotations; i++) {
+
+            vector<vector<int>> position;
+            for (int j = 0; j < shape.size(); j++) {
+                int dx = shape[j][0];
+                int dy = shape[j][1];
+                // cout << "dx = " << dx << ", dy = " << dy << endl;
+                if (i == 0) {
+                    position.push_back({cx+dx, cy+dy});
+                }
+                else if (i == 1) {
+                    position.push_back({cx-dy, cy+dx});
+                }
+                else if (i == 2) {
+                    position.push_back({cx-dx, cy-dy});
+                }
+                else { //i == 3
+                    position.push_back({cx+dy, cy-dx});
+                }
+            }
+            positions.push_back(position);
+            
+        }
+        // cout << "positions.size() = " << positions.size() << endl;
+        // for (int i = 0; i < positions.size(); i++) {
+        //     cout << "position " << i << endl;
+        //     for (int j = 0; j < positions[i].size(); j++) {
+        //         cout << "(" << positions[i][j][0] << ", " << positions[i][j][1] << ") ";
+        //     }
+        //     cout << endl;
+        // }
+
+        return positions;
+    }
 };
 
 class Grid {
 private:
     vector<vector<int>> grid;
     unordered_map<int, pair<int, int>> index_to_position;
-    unordered_map<pair<int, int>, int> position_to_index;
+    unordered_map<pair<int, int>, int, pair_hash, pair_equal> position_to_index;
 public:
     // Grid(vector<vector<int>> grid) {
     //     this->grid = grid;
@@ -66,12 +123,41 @@ public:
             int y = stoi(line.substr(space + 1));
             this->grid.push_back({x, y});
             this->index_to_position.insert({i, {x, y}});
-            this->position_to_index.insert({{x, y}, i});
+            this->position_to_index.insert({make_pair(x, y), i});
             i++;
         }
     }
     vector<vector<int>> get_grid() {
         return grid;
+    }
+
+    // check if a list of positions is valid by checking if each position is in the grid
+    bool is_valid(vector<vector<int>> position) {
+        for (int i = 0; i < position.size(); i++) {
+            if (position_to_index.find(make_pair(position[i][0], position[i][1])) == position_to_index.end()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // iterate through the grid and try placing the center of the pentomino at each point
+    // if the pentomino fits, add it to the position list, using the mappings to indices.
+    vector<vector<int>> get_valid_positions(Pentomino pentomino) {
+        vector<vector<int>> valid_positions;
+        for (int i = 0; i < grid.size(); i++) {
+            vector<vector<vector<int>>> positions = pentomino.get_positions(grid[i]);
+            for (int j = 0; j < positions.size(); j++) {
+                if (is_valid(positions[j])) {
+                    vector<int> mapped_position;
+                    for (int k = 0; k < positions[j].size(); k++) {
+                        mapped_position.push_back(position_to_index.at({positions[j][k][0], positions[j][k][1]}));
+                    }
+                    valid_positions.push_back(mapped_position);
+                }
+            }
+        }
+        return valid_positions;
     }
 };
 
@@ -112,6 +198,30 @@ int main() {
     vector<Pentomino> pentominoes = read_pentominoes("pentominos");
     for (int i = 0; i < pentominoes.size(); i++) {
         cout << pentominoes[i].to_string() << endl;
+    }
+
+    vector<vector<vector<int>>> all_valid_positions;
+    for (int i = 0; i < pentominoes.size(); i++) {
+        vector<vector<int>> valid_positions = grid.get_valid_positions(pentominoes[i]);
+        all_valid_positions.push_back(valid_positions);
+        // cout << "Pentomino " << i << " has " << valid_positions.size() << " valid positions" << endl;
+    }
+
+    // print out pentomino positions
+    for (int i = 0; i < all_valid_positions.size(); i++) {
+
+        // for each pentomino
+        cout << "Pentomino " << i << endl;
+        cout << all_valid_positions[i].size() << " valid positions" << endl;
+        for (int j = 0; j < all_valid_positions[i].size(); j++) {
+
+            // for each position
+            cout << "  ";
+            for (int k = 0; k < all_valid_positions[i][j].size(); k++) {
+                cout << all_valid_positions[i][j][k] << " ";
+            }
+            cout << endl;
+        }
     }
 
     return 0;
